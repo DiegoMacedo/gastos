@@ -1,20 +1,17 @@
 package com.dmo.gastos.ui;
 
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.dmo.gastos.R;
+import com.dmo.gastos.adapter.GastoAdapter;
 import com.dmo.gastos.model.Gasto;
 import com.dmo.gastos.viewModel.GastoViewModel;
 import com.google.android.material.button.MaterialButton;
@@ -23,79 +20,83 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
+
     private GastoViewModel gastoViewModel;
     private TextInputEditText etDescricao, etValor;
     private AutoCompleteTextView autoCompleteCategoria;
+    private AutoCompleteTextView autoCompleteFormaPagamento; // Nova variável adicionada
     private MaterialButton btnGuardar;
+    private RecyclerView recyclerView;
+    private GastoAdapter adapter;
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         etDescricao = findViewById(R.id.etDescricao);
         etValor = findViewById(R.id.etValor);
         autoCompleteCategoria = findViewById(R.id.autoCompleteCategoria);
+        autoCompleteFormaPagamento = findViewById(R.id.autoCompleteFormaPagamento);
         btnGuardar = findViewById(R.id.btnGuardar);
 
+        recyclerView = findViewById(R.id.recyclerViewGastos);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new GastoAdapter();
+        recyclerView.setAdapter(adapter);
+
         gastoViewModel = new ViewModelProvider(this).get(GastoViewModel.class);
+        gastoViewModel.getTodosGastos().observe(this, gastos -> {
+            adapter.setGastos(gastos);
+        });
 
-        // 4. Configurar o menu suspenso de Categorias
         configurarMenuCategorias();
-
-        // 5. Configurar a ação do botão "Guardar"
+        configurarMenuFormaPagamento();
         btnGuardar.setOnClickListener(v -> guardarGasto());
     }
 
     private void configurarMenuCategorias() {
-        // Criamos uma lista de opções
         String[] categorias = new String[]{"Casamento", "Construção", "Geral"};
-
-        // Criamos um adaptador para ligar a lista ao visual do Android
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        ArrayAdapter<String> adapterMenu = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_dropdown_item_1line,
                 categorias
         );
+        autoCompleteCategoria.setAdapter(adapterMenu);
+    }
 
-        // Ligamos o adaptador ao nosso campo na tela
-        autoCompleteCategoria.setAdapter(adapter);
+    private void configurarMenuFormaPagamento() {
+        String[] formas = new String[]{"PIX", "Cartão de Crédito", "Cartão de Débito", "Dinheiro", "Boleto"};
+        ArrayAdapter<String> adapterMenu = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                formas
+        );
+        autoCompleteFormaPagamento.setAdapter(adapterMenu);
     }
 
     private void guardarGasto() {
-        // Pegar no texto que o utilizador digitou
         String descricao = etDescricao.getText() != null ? etDescricao.getText().toString().trim() : "";
         String valorString = etValor.getText() != null ? etValor.getText().toString().trim() : "";
         String categoria = autoCompleteCategoria.getText().toString().trim();
+        String formaPagamento = autoCompleteFormaPagamento.getText().toString().trim();
 
-        // Validação: Não permitir guardar se faltar informação
-        if (descricao.isEmpty() || valorString.isEmpty() || categoria.isEmpty()) {
+        if (descricao.isEmpty() || valorString.isEmpty() || categoria.isEmpty() || formaPagamento.isEmpty()) {
             Toast.makeText(this, "Por favor, preencha todos os campos.", Toast.LENGTH_SHORT).show();
-            return; // Interrompe a função aqui
+            return;
         }
 
         try {
-            // Converter o texto do valor para um número decimal (Double)
             double valor = Double.parseDouble(valorString);
-
-            // Pegar na data e hora atuais do telemóvel (em milissegundos)
             long dataAtual = new Date().getTime();
 
-            // Ainda não temos o campo "Forma de Pagamento" no ecrã, vamos pôr um padrão por agora
-            String formaPagamentoPadrao = "A definir";
-
-            // Criar o objeto Gasto!
-            Gasto novoGasto = new Gasto(descricao, valor, formaPagamentoPadrao, dataAtual, categoria);
-
-            // Pedir ao ViewModel para guardar o gasto
+            Gasto novoGasto = new Gasto(descricao, valor, formaPagamento, dataAtual, categoria);
             gastoViewModel.inserir(novoGasto);
 
-            // Dar um feedback ao utilizador e limpar os campos
-            Toast.makeText(this, "Gasto guardado com sucesso!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Gasto guardado!", Toast.LENGTH_SHORT).show();
             limparCampos();
 
         } catch (NumberFormatException e) {
-            // Se o utilizador digitar letras no valor (apesar do teclado numérico), tratamos o erro
             Toast.makeText(this, "Valor inválido.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         etDescricao.setText("");
         etValor.setText("");
         autoCompleteCategoria.setText("");
-        etDescricao.requestFocus(); // Voltar a colocar o cursor (piscar) no campo de descrição
+        autoCompleteFormaPagamento.setText("");
+        etDescricao.requestFocus();
     }
 }
-
