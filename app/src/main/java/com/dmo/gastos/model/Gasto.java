@@ -13,12 +13,12 @@ public class Gasto {
     private String categoria;
     private String formaPagamento;
 
-    public Gasto(String descricao, double valor, String formaPagamento, long data, String categoria) {
+    public Gasto(String descricao, double valor, long data, String categoria, String formaPagamento) {
         this.descricao = descricao;
         this.valor = valor;
-        this.formaPagamento = formaPagamento;
         this.data = data;
         this.categoria = categoria;
+        this.formaPagamento = formaPagamento;
     }
 
     public int getId() {

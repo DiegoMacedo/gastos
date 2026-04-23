@@ -85,6 +85,28 @@
             android:inputType="none" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- NOVO CAMPO: Data do Gasto -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutData"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Data do Gasto"
+        app:layout_constraintTop_toBottomOf="@id/layoutFormaPagamento"
+        app:startIconDrawable="@android:drawable/ic_menu_today">
+
+        <!-- focusable="false" impede que o teclado abra quando clicamos aqui -->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:focusable="false"
+            android:inputType="none" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGuardar"
         android:layout_width="match_parent"
@@ -93,7 +115,7 @@
         android:text="Guardar Gasto"
         android:textSize="16sp"
         app:cornerRadius="8dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutFormaPagamento" />
+        app:layout_constraintTop_toBottomOf="@id/layoutData" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewGastos"
