@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         autoCompleteFormaPagamento = findViewById(R.id.autoCompleteFormaPagamento);
         btnGuardar = findViewById(R.id.btnGuardar);
         tvTotalGasto = findViewById(R.id.tvTotalGasto);
+        MaterialButton btnVerRelatorios = findViewById(R.id.btnVerRelatorios);
 
         recyclerView = findViewById(R.id.recyclerViewGastos);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -63,6 +64,10 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 tvTotalGasto.setText("R$ 0,00");
             }
+        });
+        btnVerRelatorios.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(MainActivity.this, RelatoriosActivity.class);
+            startActivity(intent);
         });
 
         configurarMenuCategorias();

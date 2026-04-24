@@ -7,7 +7,6 @@
     android:padding="16dp"
     tools:context=".ui.MainActivity">
 
-    <!-- NOVO PAINEL: Cartão para exibir o Total Gasto -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardTotal"
         android:layout_width="match_parent"
@@ -39,10 +38,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="0,00 €"
+                android:text="R$ 0,00"
                 android:textColor="@android:color/white"
                 android:textSize="28sp"
                 android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVerRelatorios"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Ver detalhes"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                app:rippleColor="#33FFFFFF" />
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
