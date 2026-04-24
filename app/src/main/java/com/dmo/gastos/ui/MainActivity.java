@@ -1,5 +1,6 @@
 package com.dmo.gastos.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -7,12 +8,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.dmo.gastos.R;
-import com.dmo.gastos.adapter.GastoAdapter;
 import com.dmo.gastos.model.Gasto;
+import com.dmo.gastos.ui.ListaGastosActivity;
+import com.dmo.gastos.ui.RelatoriosActivity;
 import com.dmo.gastos.viewModel.GastoViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -27,11 +27,13 @@ public class MainActivity extends AppCompatActivity {
     private GastoViewModel gastoViewModel;
     private TextInputEditText etDescricao, etValor, etData;
     private AutoCompleteTextView autoCompleteCategoria, autoCompleteFormaPagamento;
-    private MaterialButton btnGuardar;
-    private RecyclerView recyclerView;
-    private GastoAdapter adapter;
+    private MaterialButton btnGuardar, btnVerRelatorios, btnVerLista;
+    private android.widget.TextView tvTotalGasto, tvTitulo;
+
     private long dataSelecionada;
-    private android.widget.TextView tvTotalGasto;
+
+    // Variável para saber se estamos editando (-1 significa que é um novo gasto)
+    private int gastoIdEmEdicao = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,39 +47,57 @@ public class MainActivity extends AppCompatActivity {
         autoCompleteFormaPagamento = findViewById(R.id.autoCompleteFormaPagamento);
         btnGuardar = findViewById(R.id.btnGuardar);
         tvTotalGasto = findViewById(R.id.tvTotalGasto);
-        MaterialButton btnVerRelatorios = findViewById(R.id.btnVerRelatorios);
-
-        recyclerView = findViewById(R.id.recyclerViewGastos);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new GastoAdapter();
-        recyclerView.setAdapter(adapter);
+        tvTitulo = findViewById(R.id.tvTitulo);
+        btnVerRelatorios = findViewById(R.id.btnVerRelatorios);
+        btnVerLista = findViewById(R.id.btnVerLista); // Novo botão
 
         gastoViewModel = new ViewModelProvider(this).get(GastoViewModel.class);
-        gastoViewModel.getTodosGastos().observe(this, gastos -> {
-            adapter.setGastos(gastos);
-        });
 
+        // Painel Total
         gastoViewModel.getTotalGasto().observe(this, total -> {
-            if (total != null) {
+            if (total != null){
                 java.text.NumberFormat formatoMoeda = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.getDefault());
                 tvTotalGasto.setText(formatoMoeda.format(total));
             } else {
                 tvTotalGasto.setText("R$ 0,00");
             }
         });
-        btnVerRelatorios.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(MainActivity.this, RelatoriosActivity.class);
-            startActivity(intent);
-        });
 
         configurarMenuCategorias();
         configurarMenuFormaPagamento();
 
-        dataSelecionada = MaterialDatePicker.todayInUtcMilliseconds();
+        // 1. VERIFICAR SE VIEMOS DA TELA DE EDIÇÃO
+        Intent intent = getIntent();
+        if (intent.hasExtra("ID_GASTO")) {
+            gastoIdEmEdicao = intent.getIntExtra("ID_GASTO", -1);
+
+            // Preenche os campos com os dados antigos
+            etDescricao.setText(intent.getStringExtra("DESC_GASTO"));
+            etValor.setText(String.valueOf(intent.getDoubleExtra("VALOR_GASTO", 0.0)));
+            autoCompleteCategoria.setText(intent.getStringExtra("CAT_GASTO"), false);
+            autoCompleteFormaPagamento.setText(intent.getStringExtra("PAG_GASTO"), false);
+
+            dataSelecionada = intent.getLongExtra("DATA_GASTO", MaterialDatePicker.todayInUtcMilliseconds());
+
+            tvTitulo.setText("Editar Gasto");
+            btnGuardar.setText("Atualizar Gasto");
+        } else {
+            // Se for um novo gasto
+            dataSelecionada = MaterialDatePicker.todayInUtcMilliseconds();
+        }
         atualizarCampoDataVisual();
 
+        // Cliques
         etData.setOnClickListener(v -> mostrarCalendario());
         btnGuardar.setOnClickListener(v -> guardarGasto());
+
+        btnVerRelatorios.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, RelatoriosActivity.class));
+        });
+
+        btnVerLista.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, ListaGastosActivity.class));
+        });
     }
 
     private void mostrarCalendario() {
@@ -85,12 +105,10 @@ public class MainActivity extends AppCompatActivity {
                 .setTitleText("Selecione a data do gasto")
                 .setSelection(dataSelecionada)
                 .build();
-
         datePicker.addOnPositiveButtonClickListener(selection -> {
             dataSelecionada = selection;
             atualizarCampoDataVisual();
         });
-
         datePicker.show(getSupportFragmentManager(), "DATE_PICKER");
     }
 
@@ -125,14 +143,22 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             double valor = Double.parseDouble(valorString);
+            Gasto gasto = new Gasto(descricao, valor, dataSelecionada, categoria, formaPagamento);
 
-            Gasto novoGasto = new Gasto(descricao, valor, dataSelecionada, categoria, formaPagamento);
+            // 2. VERIFICAR SE DEVE SALVAR OU ATUALIZAR
+            if (gastoIdEmEdicao == -1) {
+                gastoViewModel.inserir(gasto);
+                Toast.makeText(this, "Gasto guardado!", Toast.LENGTH_SHORT).show();
+            } else {
+                gasto.setId(gastoIdEmEdicao); // Importante! Define o ID existente
+                gastoViewModel.atualizar(gasto);
+                Toast.makeText(this, "Gasto atualizado!", Toast.LENGTH_SHORT).show();
 
-            gastoViewModel.inserir(novoGasto);
-
-            Toast.makeText(this, "Gasto guardado!", Toast.LENGTH_SHORT).show();
+                // Fecha a tela e volta pra lista
+                finish();
+                return;
+            }
             limparCampos();
-
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Valor inválido.", Toast.LENGTH_SHORT).show();
         }
@@ -143,11 +169,8 @@ public class MainActivity extends AppCompatActivity {
         etValor.setText("");
         autoCompleteCategoria.setText("");
         autoCompleteFormaPagamento.setText("");
-
-        // Volta a data para a de "hoje" após guardar
         dataSelecionada = MaterialDatePicker.todayInUtcMilliseconds();
         atualizarCampoDataVisual();
-
         etDescricao.requestFocus();
     }
 }

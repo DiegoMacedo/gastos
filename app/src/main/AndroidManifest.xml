@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Gastos">
         <activity
+            android:name=".ui.ListaGastosActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.RelatoriosActivity"
             android:exported="false" />
         <activity
