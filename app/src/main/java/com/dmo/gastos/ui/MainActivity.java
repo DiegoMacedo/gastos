@@ -19,22 +19,19 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
 
     private GastoViewModel gastoViewModel;
-    private TextInputEditText etDescricao, etValor, etData; // etData adicionado
+    private TextInputEditText etDescricao, etValor, etData;
     private AutoCompleteTextView autoCompleteCategoria, autoCompleteFormaPagamento;
     private MaterialButton btnGuardar;
-
     private RecyclerView recyclerView;
     private GastoAdapter adapter;
-
-    // Variável que guarda a data real (em milissegundos) que vai para o banco de dados
     private long dataSelecionada;
+    private android.widget.TextView tvTotalGasto;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +40,11 @@ public class MainActivity extends AppCompatActivity {
 
         etDescricao = findViewById(R.id.etDescricao);
         etValor = findViewById(R.id.etValor);
-        etData = findViewById(R.id.etData); // Ligação do novo campo
+        etData = findViewById(R.id.etData);
         autoCompleteCategoria = findViewById(R.id.autoCompleteCategoria);
         autoCompleteFormaPagamento = findViewById(R.id.autoCompleteFormaPagamento);
         btnGuardar = findViewById(R.id.btnGuardar);
+        tvTotalGasto = findViewById(R.id.tvTotalGasto);
 
         recyclerView = findViewById(R.id.recyclerViewGastos);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -58,40 +56,41 @@ public class MainActivity extends AppCompatActivity {
             adapter.setGastos(gastos);
         });
 
+        gastoViewModel.getTotalGasto().observe(this, total -> {
+            if (total != null) {
+                java.text.NumberFormat formatoMoeda = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.getDefault());
+                tvTotalGasto.setText(formatoMoeda.format(total));
+            } else {
+                tvTotalGasto.setText("R$ 0,00");
+            }
+        });
+
         configurarMenuCategorias();
         configurarMenuFormaPagamento();
 
-        // INICIALIZA A DATA: Por padrão, a data selecionada é a de "hoje"
         dataSelecionada = MaterialDatePicker.todayInUtcMilliseconds();
         atualizarCampoDataVisual();
 
-        // Ouve o clique no campo da data para abrir o calendário
         etData.setOnClickListener(v -> mostrarCalendario());
-
         btnGuardar.setOnClickListener(v -> guardarGasto());
     }
 
-    // Método que constrói e exibe o calendário bonito do Material Design
     private void mostrarCalendario() {
         MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Selecione a data do gasto")
-                .setSelection(dataSelecionada) // Abre o calendário na data já escolhida
+                .setSelection(dataSelecionada)
                 .build();
 
-        // O que acontece quando o utilizador clica em "OK" no calendário
         datePicker.addOnPositiveButtonClickListener(selection -> {
-            dataSelecionada = selection; // Atualiza o milissegundo com a nova escolha
-            atualizarCampoDataVisual();  // Atualiza o texto que o utilizador vê
+            dataSelecionada = selection;
+            atualizarCampoDataVisual();
         });
 
-        // Exibe o calendário no ecrã
         datePicker.show(getSupportFragmentManager(), "DATE_PICKER");
     }
 
-    // Transforma o número feio (milissegundos) numa data legível (ex: 21/04/2026)
     private void atualizarCampoDataVisual() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        // O MaterialDatePicker usa UTC, então precisamos informar isso ao formatador para evitar bugs de fuso horário
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         etData.setText(sdf.format(dataSelecionada));
     }
@@ -122,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             double valor = Double.parseDouble(valorString);
 
-            // AQUI MUDOU: Em vez de capturar a data exata de agora, usamos a 'dataSelecionada' pelo calendário
             Gasto novoGasto = new Gasto(descricao, valor, dataSelecionada, categoria, formaPagamento);
 
             gastoViewModel.inserir(novoGasto);

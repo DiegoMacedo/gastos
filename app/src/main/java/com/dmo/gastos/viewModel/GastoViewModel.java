@@ -40,5 +40,8 @@ public class GastoViewModel extends AndroidViewModel {
     public LiveData<List<Gasto>> buscarPorCategoria(String categoria) {
         return mRepository.buscarPorCategoria(categoria);
     }
+    public LiveData<Double> getTotalGasto(){
+        return mRepository.getTotalGasto();
+    }
 
 }

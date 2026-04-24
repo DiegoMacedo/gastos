@@ -33,4 +33,7 @@ public interface GastoDao {
 
     @Query("SELECT SUM(valor) FROM gastos WHERE categoria = :cat")
     LiveData<Double> getTotalPorCategoria(String cat);
+
+    @Query("SELECT SUM(valor) FROM gastos")
+    LiveData<Double> getTotalGasto();
 }

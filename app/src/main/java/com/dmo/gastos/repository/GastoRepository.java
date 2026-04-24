@@ -40,4 +40,9 @@ public class GastoRepository {
     public LiveData<List<Gasto>> buscarPorCategoria(String categoria){
         return mGastoDao.buscaPorCategoria(categoria);
     }
+
+    public LiveData<Double> getTotalGasto(){
+        return mGastoDao.getTotalGasto();
+    }
+
 }
